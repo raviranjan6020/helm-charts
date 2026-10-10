@@ -7,6 +7,9 @@
 name: Upgrade Downgrade Test
 
 on:
+  push: # TEMPORARY, registers the workflow in the fork
+    branches:
+      - ocm-1732-modes
   schedule:
     - cron: '0 3 * * *'
   workflow_dispatch:
