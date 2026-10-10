@@ -36,6 +36,11 @@ jobs:
         # The four klusterlet setups of the ocm e2e jobs, each installed with Helm and with clusteradm.
         flow: [helm, clusteradm]
         mode: [Default, Singleton, SingletonHosted, grpc]
+        exclude:
+          # clusteradm v1.4.0 cannot upgrade a hosted klusterlet: join --mode hosted expects a klusterlet
+          # operator already on the hosting cluster, and upgrade klusterlet only handles the Klusterlet
+          # named "klusterlet". Helm covers SingletonHosted.
+          - {flow: clusteradm, mode: SingletonHosted}
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1

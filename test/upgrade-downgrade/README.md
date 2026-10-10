@@ -16,6 +16,7 @@ One kind cluster acts as both hub and managed cluster.
 | `clusteradm.sh` | `clusteradm init/join`, then `clusteradm upgrade --bundle-version` |
 
 Both take `MODE`: `Default`, `Singleton`, `SingletonHosted` or `grpc`, the klusterlet setups of the ocm e2e jobs.
+`clusteradm.sh` skips `SingletonHosted`: clusteradm cannot upgrade a hosted klusterlet yet.
 `summary.sh` turns the results of all jobs into one table on the run page.
 
 The workflow is [`.github/workflows/upgrade-downgrade-test.yml`](../../.github/workflows/upgrade-downgrade-test.yml).
