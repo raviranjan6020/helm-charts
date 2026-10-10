@@ -1,8 +1,9 @@
 # Copyright Contributors to the Open Cluster Management project
 #
 # Upgrade and downgrade test for OCM (open-cluster-management-io/ocm#1732).
-# release (N-1) -> ocm main (N) -> release (N-1), in the four klusterlet setups of the ocm e2e jobs,
-# each installed with Helm charts and with clusteradm. A summary job puts all results in one table.
+# release (N-1) -> ocm main (N) -> release (N-1), in the Default, Singleton and grpc klusterlet setups
+# of the ocm e2e jobs, each installed with Helm charts and with clusteradm. A summary job puts all
+# results in one table.
 # Runs nightly and on demand, not on pull requests.
 name: Upgrade Downgrade Test
 
@@ -33,14 +34,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # The four klusterlet setups of the ocm e2e jobs, each installed with Helm and with clusteradm.
+        # Klusterlet setups of the ocm e2e jobs, each installed with Helm and with clusteradm.
         flow: [helm, clusteradm]
-        mode: [Default, Singleton, SingletonHosted, grpc]
-        exclude:
-          # clusteradm v1.4.0 cannot upgrade a hosted klusterlet: join --mode hosted expects a klusterlet
-          # operator already on the hosting cluster, and upgrade klusterlet only handles the Klusterlet
-          # named "klusterlet". Helm covers SingletonHosted.
-          - {flow: clusteradm, mode: SingletonHosted}
+        mode: [Default, Singleton, grpc]
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1

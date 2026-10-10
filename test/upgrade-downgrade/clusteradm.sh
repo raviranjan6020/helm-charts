@@ -4,8 +4,8 @@
 # clusteradm flow: init and join with the release bundle, upgrade to the latest bundle (images
 # built from ocm main), then downgrade back to the release bundle. One kind cluster is both hub
 # and managed cluster. Needs a clusteradm binary that knows both bundles.
-# MODE matches the ocm e2e jobs: Default, Singleton or grpc (Default klusterlet registering through
-# the hub gRPC server). SingletonHosted is not supported: clusteradm cannot upgrade a hosted klusterlet.
+# MODE is a klusterlet setup of the ocm e2e jobs: Default, Singleton or grpc (Default klusterlet
+# registering through the hub gRPC server).
 #
 #   MODE=Default RELEASE=1.4.0 test/upgrade-downgrade/clusteradm.sh
 set -euo pipefail

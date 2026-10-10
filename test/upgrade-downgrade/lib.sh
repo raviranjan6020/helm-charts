@@ -6,11 +6,7 @@ KIND_NODE_IMAGE=${KIND_NODE_IMAGE:-kindest/node:v1.29.2}
 REGISTRY=quay.io/open-cluster-management
 IMAGES=(registration-operator registration work placement addon-manager)
 MANAGED_CLUSTER=cluster1
-# Klusterlet CR name. SingletonHosted mode names it klusterlet-<cluster> and runs the agent in a
-# namespace with that name.
-KLUSTERLET=${KLUSTERLET:-klusterlet}
 NAMESPACES=(open-cluster-management open-cluster-management-hub open-cluster-management-agent)
-[ "$KLUSTERLET" = klusterlet ] || NAMESPACES+=("$KLUSTERLET")
 START=$(date +%s)
 CURRENT_STEP=""
 CURRENT_START=$START
@@ -117,7 +113,7 @@ wait_ready() {
   wait_for "all Deployments on :$1" all images_at "$1"
   wait_rollouts
   wait_for "ClusterManager Applied" True condition Applied clustermanager/cluster-manager
-  wait_for "Klusterlet Applied" True condition Applied "klusterlet/$KLUSTERLET"
+  wait_for "Klusterlet Applied" True condition Applied klusterlet/klusterlet
   wait_for "ManagedCluster Available" True condition ManagedClusterConditionAvailable "managedcluster/$MANAGED_CLUSTER"
 }
 

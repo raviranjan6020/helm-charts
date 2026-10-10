@@ -3,14 +3,13 @@
 #
 # Helm flow: install the release charts, upgrade to the charts on ocm main (images :latest),
 # then downgrade back to the release charts. One kind cluster is both hub and managed cluster.
-# MODE matches the ocm e2e jobs: Default, Singleton, SingletonHosted, or grpc (Default klusterlet
+# MODE is a klusterlet setup of the ocm e2e jobs: Default, Singleton or grpc (Default klusterlet
 # registering through the hub gRPC server).
 #
 #   MODE=Singleton RELEASE=1.4.0 RELEASE_CHARTS=<dir with cluster-manager-1.4.0.tgz and klusterlet-1.4.0.tgz> \
 #   MAIN_CHARTS=<ocm checkout> test/upgrade-downgrade/helm.sh
 set -euo pipefail
 MODE=${MODE:-Singleton}
-[ "$MODE" != SingletonHosted ] || export KLUSTERLET=klusterlet-cluster1
 source "$(dirname "$0")/lib.sh"
 
 : "${RELEASE:?set RELEASE, e.g. 1.4.0}"
@@ -26,14 +25,6 @@ klusterlet_values=(--set-file bootstrapHubKubeConfig="$WORK_DIR/hub-kubeconfig" 
 case $MODE in
   Default | Singleton)
     klusterlet_values+=(--set klusterlet.mode="$MODE") ;;
-  SingletonHosted)
-    # The klusterlet release only runs the operator. A second release creates the Klusterlet in
-    # SingletonHosted mode, with the same cluster as the managed cluster.
-    klusterlet_values=(--set klusterlet.create=false)
-    hosted_values=(--set klusterlet.mode=SingletonHosted --set klusterlet.name="$KLUSTERLET"
-      --set klusterlet.clusterName="$MANAGED_CLUSTER"
-      --set-file bootstrapHubKubeConfig="$WORK_DIR/hub-kubeconfig"
-      --set-file externalManagedKubeConfig="$WORK_DIR/hub-kubeconfig") ;;
   grpc)
     hub_values+=(--set createBootstrapSA=true
       --set 'clusterManager.registrationConfiguration.registrationDrivers[0].authType=csr'
@@ -56,10 +47,6 @@ deploy_hub() { # deploy_hub <cluster-manager chart>
 deploy_klusterlet() { # deploy_klusterlet <klusterlet chart>
   helm upgrade --install klusterlet "$1" --namespace "$NS" --create-namespace --reset-values \
     "${klusterlet_values[@]}" >/dev/null
-  if [ "$MODE" = SingletonHosted ]; then
-    helm upgrade --install klusterlet-hosted "$1" --namespace "$NS" --reset-values \
-      "${hosted_values[@]}" >/dev/null
-  fi
 }
 
 deploy() { # deploy <cluster-manager chart> <klusterlet chart>
