@@ -66,8 +66,13 @@ write_grpc_config() {
   } > "$WORK_DIR/grpc-config"
 }
 
-# Approve the klusterlet CSRs and accept the cluster, as clusteradm accept does.
+# Accept the cluster as an admin or clusteradm accept would: once the ManagedCluster shows up on
+# the hub, approve its CSR and set hubAcceptsClient. Approving the CSR before the ManagedCluster
+# exists can end the agent's bootstrap without the ManagedCluster ever being created (seen once
+# in 180 soak jobs, when the hub webhook was not ready for the agent's first create).
 accept_cluster() {
+  wait_for "ManagedCluster $MANAGED_CLUSTER created by the agent" "$MANAGED_CLUSTER" \
+    kubectl get managedcluster "$MANAGED_CLUSTER" -o jsonpath='{.metadata.name}'
   for _ in $(seq 60); do
     kubectl get csr -l open-cluster-management.io/cluster-name="$MANAGED_CLUSTER" -o name \
       | xargs -r kubectl certificate approve >/dev/null 2>&1 || true
