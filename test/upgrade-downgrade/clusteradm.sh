@@ -24,7 +24,6 @@ case $MODE in
   Singleton) join_args+=(--singleton) ;;
   SingletonHosted)
     # The same cluster is the managed cluster, reached through its in-cluster endpoint.
-    kubectl config view --minify --flatten > "$WORK_DIR/managed-kubeconfig"
     join_args+=(--mode hosted --singleton --managed-cluster-kubeconfig "$WORK_DIR/managed-kubeconfig"
       --force-internal-endpoint-lookup-managed) ;;
   grpc)
@@ -44,6 +43,7 @@ pull_images "v$RELEASE" latest
 "$CLUSTERADM" version 2>&1 | grep -i client || true
 
 step install "init, join and accept with bundle $RELEASE"
+[ "$MODE" != SingletonHosted ] || kubectl config view --minify --flatten > "$WORK_DIR/managed-kubeconfig"
 "$CLUSTERADM" init --bundle-version "$RELEASE" ${init_args[@]+"${init_args[@]}"} --wait >/dev/null
 if [ "$MODE" = grpc ]; then
   wait_for "gRPC server Deployment exists" ok bash -c \
