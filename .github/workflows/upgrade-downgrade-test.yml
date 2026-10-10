@@ -1,9 +1,10 @@
 # Copyright Contributors to the Open Cluster Management project
 #
 # Upgrade and downgrade test for OCM (open-cluster-management-io/ocm#1732).
-# release (N-1) -> ocm main (N) -> release (N-1), once with Helm charts and once with clusteradm.
+# release (N-1) -> ocm main (N) -> release (N-1), with Helm charts in the four klusterlet setups of
+# the ocm e2e jobs, and with clusteradm.
 # Runs nightly and on demand, not on pull requests.
-name: Upgrade Test
+name: Upgrade Downgrade Test
 
 on:
   schedule:
@@ -25,14 +26,20 @@ env:
   HELM_VERSION: v3.22.0
 
 jobs:
-  upgrade:
-    name: upgrade (${{ matrix.flow }})
+  upgrade-downgrade:
+    name: upgrade-downgrade (${{ matrix.flow }}, ${{ matrix.mode }})
     runs-on: ubuntu-24.04
     timeout-minutes: 40
     strategy:
       fail-fast: false
       matrix:
-        flow: [helm, clusteradm]
+        # helm runs the four klusterlet setups of the ocm e2e jobs; clusteradm uses its default.
+        include:
+          - {flow: helm, mode: Default}
+          - {flow: helm, mode: Singleton}
+          - {flow: helm, mode: SingletonHosted}
+          - {flow: helm, mode: grpc}
+          - {flow: clusteradm, mode: Default}
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -87,17 +94,18 @@ jobs:
           RELEASE_CHARTS: ${{ runner.temp }}/release-charts
           MAIN_CHARTS: ${{ github.workspace }}/ocm
           WORK_DIR: ${{ runner.temp }}
+          MODE: ${{ matrix.mode }}
         run: |
           if [ -d ocm ]; then echo "ocm main: $(git -C ocm rev-parse --short HEAD)"; fi
-          test/upgrade/${{ matrix.flow }}.sh
+          test/upgrade-downgrade/${{ matrix.flow }}.sh
 
       - name: Collect cluster state
         if: failure()
-        run: test/upgrade/collect.sh "$RUNNER_TEMP/upgrade-test-${{ matrix.flow }}"
+        run: test/upgrade-downgrade/collect-debug.sh "$RUNNER_TEMP/debug-${{ matrix.flow }}-${{ matrix.mode }}"
 
       - name: Upload cluster state
         if: failure()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: upgrade-test-${{ matrix.flow }}
-          path: ${{ runner.temp }}/upgrade-test-${{ matrix.flow }}
+          name: debug-${{ matrix.flow }}-${{ matrix.mode }}
+          path: ${{ runner.temp }}/debug-${{ matrix.flow }}-${{ matrix.mode }}

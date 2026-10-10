@@ -5,7 +5,7 @@
 # built from ocm main), then downgrade back to the release bundle. One kind cluster is both hub
 # and managed cluster. Needs a clusteradm binary that knows both bundles.
 #
-#   RELEASE=1.4.0 test/upgrade/clusteradm.sh
+#   RELEASE=1.4.0 test/upgrade-downgrade/clusteradm.sh
 set -euo pipefail
 source "$(dirname "$0")/lib.sh"
 
@@ -17,7 +17,7 @@ upgrade() { # upgrade <bundle version>
   "$CLUSTERADM" upgrade klusterlet --bundle-version "$1" --wait >/dev/null
 }
 
-summary_start "Upgrade test (clusteradm): release $RELEASE → main → release $RELEASE"
+summary_start "Upgrade and downgrade test (clusteradm, Default): release $RELEASE → main → release $RELEASE"
 step "create kind cluster"
 create_cluster
 pull_images "v$RELEASE" latest
