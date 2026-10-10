@@ -6,6 +6,9 @@
 name: Upgrade Test
 
 on:
+  push: # TEMPORARY for the soak in the fork, remove before the upstream PR
+    branches:
+      - 'soak-*'
   schedule:
     - cron: '0 3 * * *'
   workflow_dispatch:
