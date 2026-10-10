@@ -17,6 +17,7 @@ upgrade() { # upgrade <bundle version>
   "$CLUSTERADM" upgrade klusterlet --bundle-version "$1" --wait >/dev/null
 }
 
+summary_start "Upgrade test (clusteradm): release $RELEASE → main → release $RELEASE"
 step "create kind cluster"
 create_cluster
 pull_images "v$RELEASE" latest
@@ -45,4 +46,3 @@ wait_ready "v$RELEASE"
 apply_work downgraded
 report
 
-step "passed"

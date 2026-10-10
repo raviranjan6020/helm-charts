@@ -47,6 +47,7 @@ release_kl=$RELEASE_CHARTS/klusterlet-$RELEASE.tgz
 main_cm=$MAIN_CHARTS/deploy/cluster-manager/chart/cluster-manager
 main_kl=$MAIN_CHARTS/deploy/klusterlet/chart/klusterlet
 
+summary_start "Upgrade test (helm): release $RELEASE → main → release $RELEASE"
 step "create kind cluster"
 create_cluster
 pull_images "v$RELEASE" latest
@@ -76,4 +77,3 @@ wait_ready "v$RELEASE"
 apply_work downgraded
 report
 
-step "passed"

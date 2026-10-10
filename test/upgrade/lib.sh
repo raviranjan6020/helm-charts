@@ -8,8 +8,35 @@ IMAGES=(registration-operator registration work placement addon-manager)
 NAMESPACES=(open-cluster-management open-cluster-management-hub open-cluster-management-agent)
 MANAGED_CLUSTER=cluster1
 START=$(date +%s)
+SUMMARY=${GITHUB_STEP_SUMMARY:-/dev/null}
+CURRENT_STEP=""
+CURRENT_START=$START
+IMAGE_NOTES=""
 
-step() { echo; echo "=== $* (t+$(( $(date +%s) - START ))s)"; }
+# summary_start <title>: start the job summary table. The result of each step is added as the
+# next step starts, and the last one when the script exits.
+summary_start() {
+  printf '### %s\n\n| Step | Result | Time |\n|---|---|---|\n' "$1" >> "$SUMMARY"
+  trap 'summary_end $?' EXIT
+}
+
+summary_row() { # summary_row <result>
+  [ -n "$CURRENT_STEP" ] || return 0
+  echo "| $CURRENT_STEP | $1 | $(( $(date +%s) - CURRENT_START ))s |" >> "$SUMMARY"
+}
+
+summary_end() {
+  if [ "$1" -eq 0 ]; then summary_row "✅ passed"; else summary_row "❌ failed, see the log"; fi
+  printf '\nImages:\n%s\n' "$IMAGE_NOTES" >> "$SUMMARY"
+  echo; echo "=== $([ "$1" -eq 0 ] && echo passed || echo failed) (t+$(( $(date +%s) - START ))s)"
+}
+
+step() {
+  summary_row "✅ passed"
+  CURRENT_STEP=$*
+  CURRENT_START=$(date +%s)
+  echo; echo "=== $* (t+$(( CURRENT_START - START ))s)"
+}
 
 # wait_for <description> <expected output> <command...>
 # Runs the command every 5s until it prints the expected output. Gives up after 5 minutes.
@@ -41,8 +68,10 @@ pull_images() {
       docker exec "$node" crictl pull "$REGISTRY/$img:$tag" >/dev/null
     done
     ref=$REGISTRY/registration-operator:$tag
-    echo "$ref $(docker exec "$node" crictl inspecti -o go-template --template '{{index .status.repoDigests 0}}' "$ref" | cut -d@ -f2)" \
-      "reports $(docker run --rm --pull always --entrypoint /registration-operator "$ref" --version 2>&1 | tail -1)"
+    line="$ref $(docker exec "$node" crictl inspecti -o go-template --template '{{index .status.repoDigests 0}}' "$ref" | cut -d@ -f2)"
+    line="$line reports $(docker run --rm --pull always --entrypoint /registration-operator "$ref" --version 2>&1 | tail -1)"
+    echo "$line"
+    IMAGE_NOTES="$IMAGE_NOTES- \`$line\`"$'\n'
   done
 }
 
