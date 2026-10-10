@@ -87,10 +87,8 @@ wait_ready() {
   wait_for "ManagedCluster Available" True condition ManagedClusterConditionAvailable "managedcluster/$MANAGED_CLUSTER"
 }
 
-# apply_work <value>: create or update a ManifestWork that writes <value> into a ConfigMap on the
-# managed cluster, then wait until the ConfigMap has it and Applied is True for this generation.
-apply_work() {
-  kubectl apply -f - >/dev/null <<EOF
+work_manifest() { # work_manifest <value>
+  cat <<EOF
 apiVersion: work.open-cluster-management.io/v1
 kind: ManifestWork
 metadata:
@@ -107,7 +105,26 @@ spec:
       data:
         step: $1
 EOF
-  wait_for "ManifestWork applied ($1)" "$1 True" work_state
+}
+
+# apply_work <value>: create or update a ManifestWork that writes <value> into a ConfigMap on the
+# managed cluster, then wait until the ConfigMap has it and Applied is True for this generation.
+# Right after the hub rolls out, the ManifestWork webhook can be unreachable for a few seconds
+# ("failed calling webhook ... context deadline exceeded", 1 of 108 soak jobs), so the apply is
+# retried and every failed attempt is logged.
+apply_work() {
+  local i err
+  for i in $(seq 60); do
+    if err=$(work_manifest "$1" | kubectl apply -f - 2>&1 >/dev/null); then
+      [ "$i" -eq 1 ] || echo "ok: ManifestWork apply succeeded on try $i"
+      wait_for "ManifestWork applied ($1)" "$1 True" work_state
+      return
+    fi
+    echo "retry: ManifestWork apply failed: $err"
+    sleep 5
+  done
+  echo "FAIL: ManifestWork apply ($1) did not succeed in 5 minutes" >&2
+  return 1
 }
 
 work_state() { # "<ConfigMap value> <Applied status for the current generation>"
