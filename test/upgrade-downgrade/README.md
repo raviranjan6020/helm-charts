@@ -10,10 +10,13 @@ After every step it checks that:
 
 One kind cluster acts as both hub and managed cluster.
 
-| Script | Install and upgrade | Klusterlet setup (`MODE`) |
-|---|---|---|
-| `helm.sh` | `helm upgrade --install` with the release charts and the charts on ocm `main` | `Default`, `Singleton`, `SingletonHosted`, `grpc`, as in the ocm e2e jobs |
-| `clusteradm.sh` | `clusteradm init/join`, then `clusteradm upgrade --bundle-version` | Default |
+| Script | Install and upgrade |
+|---|---|
+| `helm.sh` | `helm upgrade --install` with the release charts and the charts on ocm `main` |
+| `clusteradm.sh` | `clusteradm init/join`, then `clusteradm upgrade --bundle-version` |
+
+Both take `MODE`: `Default`, `Singleton`, `SingletonHosted` or `grpc`, the klusterlet setups of the ocm e2e jobs.
+`summary.sh` turns the results of all jobs into one table on the run page.
 
 The workflow is [`.github/workflows/upgrade-downgrade-test.yml`](../../.github/workflows/upgrade-downgrade-test.yml).
 It runs nightly and on demand.
@@ -35,7 +38,7 @@ MODE=Singleton RELEASE_CHARTS=/tmp/ocm-charts/release MAIN_CHARTS=/tmp/ocm-chart
   test/upgrade-downgrade/helm.sh
 
 # clusteradm flow (clusteradm $RELEASE on PATH)
-test/upgrade-downgrade/clusteradm.sh
+MODE=Default test/upgrade-downgrade/clusteradm.sh
 ```
 
 After a failure, `test/upgrade-downgrade/collect-debug.sh <dir>` saves resources, events and pod logs.

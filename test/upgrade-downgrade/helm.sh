@@ -101,8 +101,7 @@ release_kl=$RELEASE_CHARTS/klusterlet-$RELEASE.tgz
 main_cm=$MAIN_CHARTS/deploy/cluster-manager/chart/cluster-manager
 main_kl=$MAIN_CHARTS/deploy/klusterlet/chart/klusterlet
 
-summary_start "Upgrade and downgrade test (helm, $MODE): release $RELEASE → main → release $RELEASE"
-step "create kind cluster"
+step setup "create kind cluster"
 create_cluster
 pull_images "v$RELEASE" latest
 
@@ -112,7 +111,7 @@ kubectl config set "clusters.kind-$CLUSTER_NAME.server" \
   "https://$(kubectl -n default get svc kubernetes -o jsonpath='{.spec.clusterIP}')" \
   --kubeconfig "$WORK_DIR/hub-kubeconfig" >/dev/null
 
-step "install release $RELEASE"
+step install "install release $RELEASE"
 deploy_hub "$release_cm"
 [ "$MODE" != grpc ] || write_grpc_config
 deploy_klusterlet "$release_kl"
@@ -121,13 +120,13 @@ wait_ready "v$RELEASE"
 apply_work release
 report
 
-step "upgrade to main"
+step upgrade "upgrade to main"
 deploy "$main_cm" "$main_kl"
 wait_ready latest
 apply_work main
 report
 
-step "downgrade to release $RELEASE"
+step downgrade "downgrade to release $RELEASE"
 deploy "$release_cm" "$release_kl"
 wait_ready "v$RELEASE"
 apply_work downgraded

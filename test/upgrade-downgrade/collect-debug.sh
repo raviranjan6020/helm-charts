@@ -4,6 +4,7 @@
 # Saves cluster state after a failed run: test/upgrade-downgrade/collect-debug.sh <output dir>
 set -uo pipefail
 source "$(dirname "$0")/lib.sh"
+trap - EXIT
 
 out=${1:?usage: collect.sh <output dir>}
 mkdir -p "$out"
